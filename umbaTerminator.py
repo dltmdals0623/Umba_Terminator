@@ -15,7 +15,7 @@ BASE_DIR = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else
 LOG_DIR = os.path.join(BASE_DIR, "log")
 os.makedirs(LOG_DIR, exist_ok=True)
 LOG_FILE = os.path.join(LOG_DIR, f"umbaTerminator_{time.strftime('%Y%m%d%H%M%S')}.log")
-LOG_RETENTION_DAYS = 7
+LOG_MAX_COUNT = 10
 TARGET_DIR = os.path.join(os.environ["APPDATA"], "Umba")
 INTERVAL = 10       
 TARGET_PROCESS = ["UmbaWallpaper.exe", "UmbaShare.exe","UmbaBrownie2.exe"]
@@ -29,29 +29,25 @@ def resource_path(rel):
 
 def createTrayImage():
     try:
-        return Image.open(os.path.join(BASE_DIR, "images/icon.ico"))
+        return Image.open(os.path.join(BASE_DIR, "images/DefaultSystemNotification.contrast-black_scale-400.png"))
     except OSError:
         img = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
         d = ImageDraw.Draw(img)
-        d.ellipse((4, 4, 60, 60), fill=(220, 50, 50, 255))
+        d.ellipse((4, 4, 60, 60), fill=(32, 174, 251, 0))
         return img
 
 def watchLoop():
     log(f"감시 시작: {TARGET_DIR}")
-    lastClean = time.time()
     try:
         while not stop_event.is_set():
             deleteUmba()
-            if time.time() - lastClean >= 24 * 60 * 60:
-                cleanOldLogs()
-                lastClean = time.time()
             stop_event.wait(INTERVAL)
     finally:
         log("감시 종료")
 
 def onOpenLog(icon, item):
     try:
-        os.startfile(BASE_DIR)
+        os.startfile(LOG_DIR)
     except OSError as e:
         log(f"폴더 열기 실패: {e}")
 
@@ -63,14 +59,19 @@ def onQuit(icon, item):
     stop_event.set()
     icon.stop()
 
+def onPass(icon, item):
+    pass
+
 def runTray():
     menu = pystray.Menu(
-        pystray.MenuItem("로그 폴더 열기", onOpenLog),
-        pystray.MenuItem("지금 종료/삭제 실행", onKillNow),
+        pystray.MenuItem("Default System Notification",onPass),
         pystray.Menu.SEPARATOR,
-        pystray.MenuItem("종료", onQuit),
+        pystray.MenuItem("Open Log Directory", onOpenLog),
+        pystray.MenuItem("Execute Now", onKillNow),
+        pystray.Menu.SEPARATOR,
+        pystray.MenuItem("Quit Notification", onQuit),
     )
-    icon = pystray.Icon("umbaTerminator", createTrayImage(), "Umba Terminator", menu)
+    icon = pystray.Icon("umbaTerminator", createTrayImage(), "Default System Notification", menu)
     icon.run()
 
 def log(msg):
@@ -82,23 +83,25 @@ def log(msg):
         pass
 
 def cleanOldLogs():
-    limit = time.time() - LOG_RETENTION_DAYS * 24 * 60 * 60
     try:
-        names = os.listdir(LOG_DIR)
+        files = [
+            os.path.join(LOG_DIR, n)
+            for n in os.listdir(LOG_DIR)
+            if n.startswith("umbaTerminator_") and n.endswith(".log")
+        ]
     except OSError:
         return
-    for name in names:
-        if not (name.startswith("umbaTerminator_") and name.endswith(".log")):
-            continue
-        path = os.path.join(LOG_DIR, name)
-        if path == LOG_FILE:
-            continue
+
+    files = [p for p in files if p != LOG_FILE and os.path.isfile(p)]
+    files.sort(key=os.path.getmtime)
+
+    excess = len(files) + 1 - LOG_MAX_COUNT
+    for path in files[:max(excess, 0)]:
         try:
-            if os.path.isfile(path) and os.path.getmtime(path) < limit:
-                os.remove(path)
-                log(f"오래된 로그 삭제: {name}")
+            os.remove(path)
+            log(f"오래된 로그 삭제: {os.path.basename(path)}")
         except OSError as e:
-            log(f"로그 삭제 실패: {name}: {e}")
+            log(f"로그 삭제 실패: {os.path.basename(path)}: {e}")
 
 def killUmba():
     requested = 0
