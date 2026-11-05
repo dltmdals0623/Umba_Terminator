@@ -25,7 +25,7 @@ Windows 환경에서 콘솔 창 없이 백그라운드에서 동작하며, **움
 - **사용자 환경 자동 인식 (`%APPDATA%\Umba`)**
   - `os.environ["APPDATA"]`를 통해 별도의 경로 설정 없이 현재 로그인한 Windows 사용자의 `C:\Users\<계정명>\AppData\Roaming\Umba` 경로를 자동으로 감시합니다.
 - **시작 시 선제적 프로세스 종료 및 10초 주기 감시 (`main`, `killUmba`)**
-  - 프로그램이 시작되면 감시 루프 진입 전에 `killUmba()`를 먼저 호출하여 실행 중인 `UmbaWallpaper.exe`, `UmbaShare.exe`에 즉시 종료(`terminate()`)를 요청합니다.
+  - 프로그램이 시작되면 감시 루프 진입 전에 `killUmba()`를 먼저 호출하여 실행 중인 `UmbaWallpaper.exe`, `UmbaShare.exe`, `UmbaBrownie2.exe`에 즉시 종료(`terminate()`)를 요청합니다.
   - 이후 `INTERVAL`(10초) 간격으로 폴더를 확인하며, 파일 삭제 중 `PermissionError`가 발생할 때마다 `killUmba()`를 다시 호출하여 재실행된 프로세스를 종료합니다.
 - **움바 관련 실행 파일 선별 삭제 (`deleteUmba`)**
   - `TARGET_DIR` 내의 파일 중 파일명에 `umba`(대소문자 무관, `name.lower()`)가 포함되고 `.exe`로 끝나는 파일만 선별하여 삭제합니다.
@@ -57,6 +57,7 @@ flowchart TD
 ## 실행 및 종료 방법 (사용자용)
 
 ### 1. 프로그램 실행 (`umbaTerminator.exe`)
+
 1. 배포된 `umbaTerminator` 폴더 안에서 **`umbaTerminator.exe`** 를 실행합니다.
    - 프로세스 종료 및 파일 삭제 권한 확보를 위해 **마우스 우클릭 → [관리자 권한으로 실행]** 을 권장합니다.
 2. `--noconsole` 옵션으로 빌드되었으므로 실행 시 별도의 창이 나타나지 않으며, 즉시 백그라운드에서 감시가 시작됩니다.
@@ -65,6 +66,7 @@ flowchart TD
 > **주의 (`--onedir` 배포 구조):** `umbaTerminator.exe` 단일 파일만 바탕화면 등으로 복사하면 실행되지 않습니다. 반드시 폴더 전체(`_internal` 등 내부 구성 파일 포함)를 유지한 채 실행하거나, **바로가기(Shortcut)** 를 만들어 사용하세요.
 
 ### 2. 프로그램 종료 방법
+
 콘솔 창이 없는 백그라운드 프로세스이므로, 감시를 중단하려면 아래 두 가지 방법 중 하나를 사용합니다.
 
 - **작업 관리자 사용:**
@@ -72,6 +74,7 @@ flowchart TD
   2. **세부 정보**(또는 프로세스) 탭에서 **`umbaTerminator.exe`** (또는 `.pyw` 직접 실행 시 `pythonw.exe`)를 찾습니다.
   3. 마우스 우클릭 후 **[작업 끝내기]** 를 클릭합니다.
 - **명령 프롬프트(CMD) / PowerShell 사용:**
+
   ```cmd
   taskkill /F /IM umbaTerminator.exe
   ```
@@ -81,6 +84,7 @@ flowchart TD
 ## 빌드 및 개발 환경 (개발자용)
 
 ### 1. 요구 사항
+
 - **운영체제:** Windows 10 / 11
 - **Python:** Python 3.7 이상
 - **필수 패키지:** `psutil`, `pyinstaller`
@@ -90,6 +94,7 @@ pip install psutil pyinstaller
 ```
 
 ### 2. 프로젝트 디렉터리 구성 (빌드 전)
+
 ```text
 project_root/
 ├── umbaTerminator.pyw
@@ -99,6 +104,7 @@ project_root/
 ```
 
 ### 3. PyInstaller 빌드 명령어
+
 소스 파일 확장자를 `.pyw`로 지정한 뒤 아래 명령어로 빌드합니다.
 
 ```bash
@@ -113,6 +119,7 @@ pyinstaller --noconsole --onedir --icon=images/icon.ico --add-data "README.md;."
 | `--add-data "README.md;."` | 빌드 결과물 폴더 내에 `README.md` 파일을 함께 포함 |
 
 ### 4. 빌드 결과물 구조 (`dist/umbaTerminator/`)
+
 ```text
 dist/umbaTerminator/
 ├── umbaTerminator.exe                  # 메인 실행 파일 (아이콘 적용됨)
@@ -120,9 +127,11 @@ dist/umbaTerminator/
 └── _internal/                          # 런타임 의존성 및 동봉된 README.md (PyInstaller 6+ 기준)
     └── README.md
 ```
+
 *(PyInstaller 5.x 이하 버전에서는 `README.md` 및 의존성 파일들이 `umbaTerminator.exe`와 같은 루트 경로에 위치합니다.)*
 
 ### 5. 주요 설정 상수
+
 | 상수명 | 설정값 | 설명 |
 | :--- | :--- | :--- |
 | `BASE_DIR` | `sys.executable` 또는 `__file__` 기준 경로 | 빌드 여부(`sys.frozen`)를 감지하여 실행 파일 폴더 경로 자동 설정 |

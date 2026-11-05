@@ -6,7 +6,7 @@ BASE_DIR = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else
 LOG_FILE = os.path.join(BASE_DIR, f"umbaTerminator_{time.strftime('%Y%m%d%H%M%S')}.log")
 TARGET_DIR = os.path.join(os.environ["APPDATA"], "Umba")
 INTERVAL = 10       
-TARGET_PROCESS = ["UmbaWallpaper.exe", "UmbaShare.exe"]
+TARGET_PROCESS = ["UmbaWallpaper.exe", "UmbaShare.exe","UmbaBrownie2.exe"]
 
 # print(BASE_DIR, LOG_FILE, TARGET_DIR, INTERVAL, TARGET_PROCESS)
 
